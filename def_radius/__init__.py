@@ -36,8 +36,8 @@ def cal_rad(H,gp,fo) :
 
   iRd2 = iRd2.real
   iRd2 = np.sort(iRd2)
-  
-  Rd = 1./np.sqrt(iRd2[:])/1000  
+  with np.errstate(divide='ignore', invalid='ignore'):
+    Rd = 1./np.sqrt(iRd2[:])/1000  
 
   return Rd
 
