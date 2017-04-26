@@ -44,6 +44,19 @@ def cal_rad(H,gp,fo) :
 ###########################################################
 def cal_transfo(H,gp,fo) :
 
+  # compute matrices for the mode/layer conversion
+  # m_m2l[:,0] is the barotropic mode: should be 1..1
+  # m_m2l[:,i] is the ith baroclinic mode
+
+  # to convert from physical to modal
+  #  u_mod = np.dot(m_l2m[:,:],u_lev)
+
+  # to go back to the physical space
+  # u_lev = np.dot(m_m2l[:,:],u_mod)
+
+
+
+  
   si_z = len(H)
   mata = construct_mat(H,gp,fo)
   
