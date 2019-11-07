@@ -2,35 +2,66 @@
 
 import numpy as np
 from scipy import linalg as la
+from scipy.sparse import diags
 
-def construct_mat(H,gp,fo) :
+# def construct_mat(H,gp,fo) :
 
-  si_z = len(H)
-  H = 1.0*H
+#   si_z = len(H)
+#   H = 1.0*H
   
-  mata = np.zeros((si_z,si_z));
+#   mata = np.zeros((si_z,si_z));
   
-  mata[0,0] =  1/(H[0]*gp[0]);
-  mata[0,1] = -1/(H[0]*gp[0]);
+#   mata[0,0] =  1/(H[0]*gp[0]);
+#   mata[0,1] = -1/(H[0]*gp[0]);
   
 
-  if si_z > 2 :
-    for nz in range(1,si_z-1):
-      mata[nz,nz] = 1/H[nz]*(1/gp[nz]+1/gp[nz-1]);
-      mata[nz,nz-1] = -1/(H[nz]*gp[nz-1]);
-      mata[nz,nz+1] = -1/(H[nz]*gp[nz]);
+#   if si_z > 2 :
+#     for nz in range(1,si_z-1):
+#       mata[nz,nz] = 1/H[nz]*(1/gp[nz]+1/gp[nz-1]);
+#       mata[nz,nz-1] = -1/(H[nz]*gp[nz-1]);
+#       mata[nz,nz+1] = -1/(H[nz]*gp[nz]);
       
-  mata[si_z-1,si_z-1]  =  1/(H[si_z-1]*gp[si_z-2]);
-  mata[si_z-1,si_z-2]  = -1/(H[si_z-1]*gp[si_z-2]);
+#   mata[si_z-1,si_z-1]  =  1/(H[si_z-1]*gp[si_z-2]);
+#   mata[si_z-1,si_z-2]  = -1/(H[si_z-1]*gp[si_z-2]);
       
-  mata = fo**2*mata;
+#   mata = fo**2*mata;
+
+#   return mata
+
+#####################################################
+def gamma_stretch(dh,N2,fo,**kwargs) :
+  
+  gp = N2*0.5*(dh[1:] + dh[:-1])
+  construct_mat(dh,gp,fo, kwargs)
+
+  return mata
+
+
+#####################################################
+def construct_mat(dh,gp,fo,**kwargs) :
+  
+  sparse = kwargs.get('sparse', False)
+
+  diag_p1 = -1/(dh[:-1]*gp)
+  diag_m1 = -1/(dh[1:]*gp)
+  
+  diag0 = -np.append(diag_p1,0.)
+  diag0[1:] = diag0[1:] - diag_m1
+  
+  diagonals = [diag0,diag_m1,diag_p1]
+  mata = diags(diagonals, [0, -1, 1])
+
+  mata = fo**2*mata
+
+  if not sparse:
+    mata = mata.toarray()
 
   return mata
 
 #####################################################
-def cal_rad(H,gp,fo) :
+def cal_rad(dh,gp,fo) :
   
-  mata = construct_mat(H,gp,fo)
+  mata = construct_mat(dh,gp,fo)
 
   iRd2 = la.eig(mata,right=False)
 
@@ -42,7 +73,7 @@ def cal_rad(H,gp,fo) :
   return Rd
 
 ###########################################################
-def cal_transfo(H,gp,fo) :
+def cal_transfo(dh,gp,fo) :
 
   # compute matrices for the mode/layer conversion
   # m_m2l[:,0] is the barotropic mode: should be 1..1
@@ -57,8 +88,8 @@ def cal_transfo(H,gp,fo) :
 
 
   
-  si_z = len(H)
-  mata = construct_mat(H,gp,fo)
+  si_z = len(dh)
+  mata = construct_mat(dh,gp,fo)
   
   iRd2, eigl,eigr= la.eig(mata,left=True)
     
@@ -71,14 +102,14 @@ def cal_transfo(H,gp,fo) :
   #  Rd = 1./np.sqrt(iRd2[:])/1000  
   
   # Normalize eigenvectors
-  Ht = np.sum(H)
-  H = np.reshape(H,(si_z,1))
+  Ht = np.sum(dh)
+  dh = np.reshape(dh,(si_z,1))
   
-  scap = np.sum(H*eigr*eigr,0)
+  scap = np.sum(dh*eigr*eigr,0)
   eigr = eigr*np.sqrt(Ht/scap)*np.sign(eigr[0,:])
   
   # scalar product
-  check = np.sum(H.T*eigr[:,0]*eigr[:,0])/Ht
+  check = np.sum(dh.T*eigr[:,0]*eigr[:,0])/Ht
   
   scap2 =  np.sum(eigl*eigr,0)
   eigl = eigl/scap2
