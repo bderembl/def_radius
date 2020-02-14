@@ -1,3 +1,5 @@
+note: this package is about to retire. see qgutils instead
+
 # Installation
 
 python setup.py install --user
